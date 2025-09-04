@@ -18,6 +18,9 @@ class DogQuizViewModel: ObservableObject {
     @Published var totalQuestions: Int = 0
     @Published var timeRemaining: Int = 10
     @Published var isTimeUp: Bool = false
+    @Published var isGameStarted: Bool = false
+    @Published var selectedNumberOfQuestions: Int = 10
+    @Published var remainingQuestions: Int = 10  // Initialize with default value
     private var allBreeds: [String] = []
     private var autoProgressTimer: Timer?
     private var questionTimer: Timer?
@@ -29,6 +32,15 @@ class DogQuizViewModel: ObservableObject {
     
     init() {
         setupSounds()
+    }
+    
+    func startGame(with numberOfQuestions: Int) {
+        selectedNumberOfQuestions = numberOfQuestions
+        remainingQuestions = numberOfQuestions
+        score = 0
+        totalQuestions = 0
+        isGameStarted = true
+        loadNewQuestion()
     }
     
     private func setupSounds() {
@@ -81,6 +93,13 @@ class DogQuizViewModel: ObservableObject {
     }
     
     func loadNewQuestion() {
+        guard remainingQuestions > 0 else {
+            // Game is finished
+            isGameStarted = false
+            return
+        }
+        
+        remainingQuestions -= 1
         DogAPI.fetchRandomDogImage { [weak self] result in
             DispatchQueue.main.async {
                 switch result {
@@ -172,11 +191,155 @@ class DogQuizViewModel: ObservableObject {
     }
 }
 
+// MARK: - Score Dialog
+struct ScoreDialog: View {
+    let score: Int
+    let totalQuestions: Int
+    let onPlayAgain: () -> Void
+    
+    private var percentage: Int {
+        guard totalQuestions > 0 else { return 0 }
+        return Int(Double(score) / Double(totalQuestions) * 100)
+    }
+    
+    private var emoji: String {
+        switch percentage {
+        case 90...100: return "🏆"
+        case 70...89: return "🌟"
+        case 50...69: return "👍"
+        default: return "🎯"
+        }
+    }
+    
+    var body: some View {
+        VStack(spacing: 20) {
+            Text(emoji)
+                .font(.system(size: 50))
+            
+            Text("Quiz Complete!")
+                .font(.title)
+                .fontWeight(.bold)
+            
+            VStack(spacing: 8) {
+                Text("Your Score:")
+                    .font(.headline)
+                Text("\(percentage)%")
+                    .font(.system(size: 40, weight: .bold))
+                Text("\(score) out of \(totalQuestions) correct")
+                    .foregroundColor(.secondary)
+            }
+            
+            Button(action: onPlayAgain) {
+                Text("Play Again")
+                    .font(.headline)
+                    .foregroundColor(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding()
+                    .background(Color.blue)
+                    .cornerRadius(10)
+            }
+            .padding(.horizontal)
+            .padding(.top)
+        }
+        .padding()
+        .background(Color.white)
+        .cornerRadius(20)
+        .shadow(radius: 10)
+    }
+}
+
+// MARK: - Start Dialog
+struct StartDialog: View {
+    @Binding var isPresented: Bool
+    let onStart: (Int) -> Void
+    @State private var selectedQuestions = 10
+    
+    let questionOptions = [5, 10, 15, 20]
+    
+    var body: some View {
+        VStack(spacing: 20) {
+            Text("🐕 Dog Breed Quiz")
+                .font(.title)
+                .fontWeight(.bold)
+            
+            Text("How many breeds would you like to guess?")
+                .font(.headline)
+            
+            Picker("Number of Questions", selection: $selectedQuestions) {
+                ForEach(questionOptions, id: \.self) { number in
+                    Text("\(number) breeds").tag(number)
+                }
+            }
+            .pickerStyle(.wheel)
+            
+            Button(action: {
+                onStart(selectedQuestions)
+                isPresented = false
+            }) {
+                Text("Start Quiz")
+                    .font(.headline)
+                    .foregroundColor(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding()
+                    .background(Color.blue)
+                    .cornerRadius(10)
+            }
+            .padding(.horizontal)
+        }
+        .padding()
+        .background(Color.white)
+        .cornerRadius(20)
+        .shadow(radius: 10)
+    }
+}
+
 // MARK: - ContentView
 struct ContentView: View {
     @StateObject private var viewModel = DogQuizViewModel()
+    @State private var showStartDialog = true
+    @State private var showScoreDialog = false
     
     var body: some View {
+        ZStack {
+            if viewModel.isGameStarted {
+                gameView
+            }
+            
+            if showStartDialog {
+                Color.black.opacity(0.3)
+                    .edgesIgnoringSafeArea(.all)
+                
+                StartDialog(isPresented: $showStartDialog) { numberOfQuestions in
+                    viewModel.startGame(with: numberOfQuestions)
+                }
+                .padding()
+            }
+            
+            if showScoreDialog {
+                Color.black.opacity(0.3)
+                    .edgesIgnoringSafeArea(.all)
+                
+                ScoreDialog(
+                    score: viewModel.score,
+                    totalQuestions: viewModel.totalQuestions
+                ) {
+                    showScoreDialog = false
+                    showStartDialog = true
+                }
+                .padding()
+                .transition(.scale.combined(with: .opacity))
+            }
+        }
+        .onChange(of: viewModel.isGameStarted) { isStarted in
+            if !isStarted && !showStartDialog {
+                withAnimation {
+                    showScoreDialog = true
+                }
+            }
+        }
+    }
+    
+    private var gameView: some View {
         VStack (spacing:16){
             // Score Display
             HStack {
