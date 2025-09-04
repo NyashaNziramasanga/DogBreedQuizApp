@@ -83,6 +83,7 @@ struct ContentView: View {
     @StateObject private var viewModel = DogQuizViewModel()
     
     var body: some View {
+        // DOG IMAGE
         VStack (spacing:16){
             if let url = URL(string: viewModel.dogImageURL) {
                 AsyncImage(url: url) { image in
@@ -95,12 +96,14 @@ struct ContentView: View {
                 }
             }
             
-// QUESTION
+            // QUESTION
             Text("What breed is this ?")
                          .font(.title2)
                          .fontWeight(.bold)
                          .multilineTextAlignment(.center)
                          .padding(.horizontal)
+            
+            // ANSWER OPTIONS
             ForEach(viewModel.options, id: \.self) { option in
                 Button(action: { viewModel.checkAnswer(option) }) {
                     Text(option)
