@@ -13,7 +13,6 @@ class DogQuizViewModel: ObservableObject {
     @Published var dogImageURL: String = ""
     @Published var options: [String] = []
     @Published var correctAnswer: String = ""
-    @Published var feedback: String?
     @Published var answeredOption: String?
     @Published var score: Int = 0
     @Published var totalQuestions: Int = 0
@@ -57,7 +56,7 @@ class DogQuizViewModel: ObservableObject {
                     self?.dogImageURL = imageURL
                     self?.setupQuestion(from: imageURL)
                 case .failure:
-                    self?.feedback = "Failed to load dog image."
+                    print("Failed to load dog image.")
                 }
             }
         }
@@ -115,7 +114,6 @@ class DogQuizViewModel: ObservableObject {
         if isCorrect {
             score += 1
         }
-        feedback = isCorrect ? "✅ Correct!" : "❌ Wrong! It's \(correctAnswer)."
         
         // Provide haptic feedback
         feedbackGenerator.prepare()
@@ -136,7 +134,6 @@ class DogQuizViewModel: ObservableObject {
             DispatchQueue.main.async {
                 self?.loadNewQuestion()
                 self?.answeredOption = nil
-                self?.feedback = nil
             }
         }
     }
@@ -159,9 +156,9 @@ struct ContentView: View {
                 .padding(8)
                 .background(Color.blue.opacity(0.1))
                 .cornerRadius(8)
-            }
-                
                 Spacer()
+            }
+            
             if let url = URL(string: viewModel.dogImageURL) {
                 AsyncImage(url: url) { image in
                     image.resizable()
