@@ -16,8 +16,11 @@ class DogQuizViewModel: ObservableObject {
     @Published var answeredOption: String?
     @Published var score: Int = 0
     @Published var totalQuestions: Int = 0
+    @Published var timeRemaining: Int = 10
+    @Published var isTimeUp: Bool = false
     private var allBreeds: [String] = []
     private var autoProgressTimer: Timer?
+    private var questionTimer: Timer?
     private let feedbackGenerator = UINotificationFeedbackGenerator()
     
     // Audio players for feedback sounds
@@ -48,6 +51,35 @@ class DogQuizViewModel: ObservableObject {
         }
     }
     
+    private func startQuestionTimer() {
+        timeRemaining = 10
+        isTimeUp = false
+        questionTimer?.invalidate()
+        
+        questionTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
+            guard let self = self else { return }
+            if self.timeRemaining > 0 {
+                self.timeRemaining -= 1
+            } else {
+                self.questionTimer?.invalidate()
+                self.timeUp()
+            }
+        }
+    }
+    
+    private func timeUp() {
+        isTimeUp = true
+        wrongSound?.play()
+        totalQuestions += 1
+        
+        // Auto-progress after showing correct answer
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) { [weak self] in
+            self?.loadNewQuestion()
+            self?.answeredOption = nil
+            self?.isTimeUp = false
+        }
+    }
+    
     func loadNewQuestion() {
         DogAPI.fetchRandomDogImage { [weak self] result in
             DispatchQueue.main.async {
@@ -55,6 +87,7 @@ class DogQuizViewModel: ObservableObject {
                 case .success(let imageURL):
                     self?.dogImageURL = imageURL
                     self?.setupQuestion(from: imageURL)
+                    self?.startQuestionTimer()
                 case .failure:
                     print("Failed to load dog image.")
                 }
@@ -147,6 +180,7 @@ struct ContentView: View {
         VStack (spacing:16){
             // Score Display
             HStack {
+                // Score
                 HStack(spacing: 4) {
                     Image(systemName: "star.fill")
                         .foregroundColor(.yellow)
@@ -156,7 +190,21 @@ struct ContentView: View {
                 .padding(8)
                 .background(Color.blue.opacity(0.1))
                 .cornerRadius(8)
+                
                 Spacer()
+                
+                // Timer
+                HStack(spacing: 4) {
+                    Image(systemName: "clock.fill")
+                        .foregroundColor(viewModel.timeRemaining <= 3 ? .red : .blue)
+                    Text("\(viewModel.timeRemaining)s")
+                        .font(.headline)
+                        .foregroundColor(viewModel.timeRemaining <= 3 ? .red : .primary)
+                }
+                .padding(8)
+                .background(Color.blue.opacity(0.1))
+                .cornerRadius(8)
+                .animation(.default, value: viewModel.timeRemaining)
             }
             
             if let url = URL(string: viewModel.dogImageURL) {
@@ -186,7 +234,7 @@ struct ContentView: View {
                       AnswerButton(
                           option: option,
                           action: { viewModel.checkAnswer(option) },
-                          isCorrect: viewModel.answeredOption == option ? (option == viewModel.correctAnswer) : nil
+                          isCorrect: (viewModel.answeredOption == option || viewModel.isTimeUp) ? (option == viewModel.correctAnswer) : nil
                       )
                   }
               }
