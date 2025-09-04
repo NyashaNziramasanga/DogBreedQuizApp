@@ -84,18 +84,37 @@ class DogQuizViewModel: ObservableObject {
         wrongSound?.play()
         totalQuestions += 1
         
-        // Auto-progress after showing correct answer
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) { [weak self] in
-            self?.loadNewQuestion()
-            self?.answeredOption = nil
-            self?.isTimeUp = false
+        // Check if this was the last question
+        if remainingQuestions == 0 {
+            // Show correct answer for 2 seconds then end game
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) { [weak self] in
+                self?.endGame()
+            }
+        } else {
+            // Auto-progress after showing correct answer
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) { [weak self] in
+                self?.loadNewQuestion()
+                self?.answeredOption = nil
+                self?.isTimeUp = false
+            }
         }
+    }
+    
+    private func endGame() {
+        // Stop all timers
+        questionTimer?.invalidate()
+        autoProgressTimer?.invalidate()
+        
+        // Reset states
+        timeRemaining = 0
+        isTimeUp = false
+        isGameStarted = false
     }
     
     func loadNewQuestion() {
         guard remainingQuestions > 0 else {
             // Game is finished
-            isGameStarted = false
+            endGame()
             return
         }
         
@@ -181,11 +200,19 @@ class DogQuizViewModel: ObservableObject {
         // Cancel any existing timer
         autoProgressTimer?.invalidate()
         
-        // Set up new timer for auto-progression
-        autoProgressTimer = Timer.scheduledTimer(withTimeInterval: 2.0, repeats: false) { [weak self] _ in
-            DispatchQueue.main.async {
-                self?.loadNewQuestion()
-                self?.answeredOption = nil
+        // Check if this was the last question
+        if remainingQuestions == 0 {
+            // Show result for 2 seconds then end game
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) { [weak self] in
+                self?.endGame()
+            }
+        } else {
+            // Set up new timer for auto-progression
+            autoProgressTimer = Timer.scheduledTimer(withTimeInterval: 2.0, repeats: false) { [weak self] _ in
+                DispatchQueue.main.async {
+                    self?.loadNewQuestion()
+                    self?.answeredOption = nil
+                }
             }
         }
     }
