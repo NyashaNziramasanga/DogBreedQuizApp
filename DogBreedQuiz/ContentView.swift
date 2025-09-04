@@ -262,6 +262,7 @@ struct AnswerButton: View {
                 ZStack(alignment: .topTrailing) {
                     Text(option)
                         .font(.headline)
+                        .foregroundColor(.black)
                         .frame(width: geometry.size.width, height: geometry.size.width)
                         .background(backgroundColor)
                         .cornerRadius(10)
