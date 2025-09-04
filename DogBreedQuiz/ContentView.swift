@@ -103,10 +103,16 @@ struct ContentView: View {
                          .multilineTextAlignment(.center)
                          .padding(.horizontal)
             
-            // ANSWER OPTIONS
-              ForEach(viewModel.options, id: \.self) { option in
-                  AnswerButton(option: option, action: { viewModel.checkAnswer(option) })
+                         // ANSWER OPTIONS
+              LazyVGrid(columns: [
+                  GridItem(.flexible(), spacing: 8),
+                  GridItem(.flexible(), spacing: 8)
+              ], spacing: 8) {
+                  ForEach(viewModel.options, id: \.self) { option in
+                      AnswerButton(option: option, action: { viewModel.checkAnswer(option) })
+                  }
               }
+              .padding(8)
             
             if let feedback = viewModel.feedback {
                 Text(feedback)
@@ -134,14 +140,16 @@ struct AnswerButton: View {
     let action: () -> Void
     
     var body: some View {
-        Button(action: action) {
-            Text(option)
-                .padding()
-                .frame(maxWidth: .infinity)
-                .background(Color.blue.opacity(0.2))
-                .cornerRadius(10)
+        GeometryReader { geometry in
+            Button(action: action) {
+                Text(option)
+                    .font(.headline)
+                    .frame(width: geometry.size.width, height: geometry.size.width)
+                    .background(Color.blue.opacity(0.2))
+                    .cornerRadius(10)
+            }
         }
-        .padding(.horizontal)
+        .aspectRatio(1, contentMode: .fit) 
     }
 }
 
