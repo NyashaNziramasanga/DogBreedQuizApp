@@ -26,23 +26,12 @@ class DogQuizViewModel: ObservableObject {
     private var questionTimer: Timer?
     private let feedbackGenerator = UINotificationFeedbackGenerator()
     
-    // Audio players for sounds
+    // Audio players for feedback sounds
     private var correctSound: AVAudioPlayer?
     private var wrongSound: AVAudioPlayer?
-    private var backgroundMusic: AVAudioPlayer?
-    @Published var isMusicEnabled: Bool = true
     
     init() {
         setupSounds()
-    }
-    
-    func toggleMusic() {
-        isMusicEnabled.toggle()
-        if isMusicEnabled {
-            backgroundMusic?.play()
-        } else {
-            backgroundMusic?.pause()
-        }
     }
     
     func startGame(with numberOfQuestions: Int) {
@@ -51,16 +40,10 @@ class DogQuizViewModel: ObservableObject {
         score = 0
         totalQuestions = 0
         isGameStarted = true
-        
-        if isMusicEnabled {
-            backgroundMusic?.play()
-        }
-        
         loadNewQuestion()
     }
     
     private func setupSounds() {
-        // Setup correct sound
         if let correctPath = Bundle.main.path(forResource: "correct", ofType: "mp3") {
             do {
                 correctSound = try AVAudioPlayer(contentsOf: URL(fileURLWithPath: correctPath))
@@ -70,25 +53,12 @@ class DogQuizViewModel: ObservableObject {
             }
         }
         
-        // Setup wrong sound
         if let wrongPath = Bundle.main.path(forResource: "wrong", ofType: "mp3") {
             do {
                 wrongSound = try AVAudioPlayer(contentsOf: URL(fileURLWithPath: wrongPath))
                 wrongSound?.prepareToPlay()
             } catch {
                 print("Error loading wrong sound: \(error)")
-            }
-        }
-        
-        // Setup background music
-        if let musicPath = Bundle.main.path(forResource: "background-music", ofType: "mp3", inDirectory: "Sounds") {
-            do {
-                backgroundMusic = try AVAudioPlayer(contentsOf: URL(fileURLWithPath: musicPath))
-                backgroundMusic?.numberOfLoops = -1 // Loop indefinitely
-                backgroundMusic?.volume = 0.3 // Set to 30% volume
-                backgroundMusic?.prepareToPlay()
-            } catch {
-                print("Error loading background music: \(error)")
             }
         }
     }
@@ -135,10 +105,6 @@ class DogQuizViewModel: ObservableObject {
         // Stop all timers
         questionTimer?.invalidate()
         autoProgressTimer?.invalidate()
-        
-        // Stop background music
-        backgroundMusic?.stop()
-        backgroundMusic?.currentTime = 0
         
         // Reset states
         timeRemaining = 0
@@ -403,17 +369,8 @@ struct ContentView: View {
     
     private var gameView: some View {
         VStack (spacing:16){
-            // TOP BAR: SCORE, MUSIC & TIMER
+            // SCORE & TIMER
             HStack {
-                // Music Toggle
-                Button(action: { viewModel.toggleMusic() }) {
-                    Image(systemName: viewModel.isMusicEnabled ? "speaker.wave.2.fill" : "speaker.slash.fill")
-                        .foregroundColor(.blue)
-                        .font(.headline)
-                        .padding(8)
-                        .background(Color.blue.opacity(0.1))
-                        .cornerRadius(8)
-                }
                 // SCORE
                 HStack(spacing: 4) {
                     Image(systemName: "star.fill")
