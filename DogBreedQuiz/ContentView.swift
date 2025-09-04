@@ -15,6 +15,7 @@ class DogQuizViewModel: ObservableObject {
     @Published var answeredOption: String?
     private var allBreeds: [String] = []
     private var autoProgressTimer: Timer?
+    private let feedbackGenerator = UINotificationFeedbackGenerator()
     
     func loadNewQuestion() {
         DogAPI.fetchRandomDogImage { [weak self] result in
@@ -77,7 +78,12 @@ class DogQuizViewModel: ObservableObject {
     
     func checkAnswer(_ answer: String) {
         answeredOption = answer
-        feedback = (answer == correctAnswer) ? "✅ Correct!" : "❌ Wrong! It's \(correctAnswer)."
+        let isCorrect = answer == correctAnswer
+        feedback = isCorrect ? "✅ Correct!" : "❌ Wrong! It's \(correctAnswer)."
+        
+        // Provide haptic feedback
+        feedbackGenerator.prepare()
+        feedbackGenerator.notificationOccurred(isCorrect ? .success : .error)
         
         // Cancel any existing timer
         autoProgressTimer?.invalidate()
