@@ -6,7 +6,9 @@
 //
 
 import SwiftUI
+import AVFoundation
 
+// MARK: - DogQuizViewModel
 class DogQuizViewModel: ObservableObject {
     @Published var dogImageURL: String = ""
     @Published var options: [String] = []
@@ -16,6 +18,34 @@ class DogQuizViewModel: ObservableObject {
     private var allBreeds: [String] = []
     private var autoProgressTimer: Timer?
     private let feedbackGenerator = UINotificationFeedbackGenerator()
+    
+    // Audio players for feedback sounds
+    private var correctSound: AVAudioPlayer?
+    private var wrongSound: AVAudioPlayer?
+    
+    init() {
+        setupSounds()
+    }
+    
+    private func setupSounds() {
+        if let correctPath = Bundle.main.path(forResource: "correct", ofType: "mp3") {
+            do {
+                correctSound = try AVAudioPlayer(contentsOf: URL(fileURLWithPath: correctPath))
+                correctSound?.prepareToPlay()
+            } catch {
+                print("Error loading correct sound: \(error)")
+            }
+        }
+        
+        if let wrongPath = Bundle.main.path(forResource: "wrong", ofType: "mp3") {
+            do {
+                wrongSound = try AVAudioPlayer(contentsOf: URL(fileURLWithPath: wrongPath))
+                wrongSound?.prepareToPlay()
+            } catch {
+                print("Error loading wrong sound: \(error)")
+            }
+        }
+    }
     
     func loadNewQuestion() {
         DogAPI.fetchRandomDogImage { [weak self] result in
@@ -85,6 +115,13 @@ class DogQuizViewModel: ObservableObject {
         feedbackGenerator.prepare()
         feedbackGenerator.notificationOccurred(isCorrect ? .success : .error)
         
+        // Play appropriate sound
+        if isCorrect {
+            correctSound?.play()
+        } else {
+            wrongSound?.play()
+        }
+        
         // Cancel any existing timer
         autoProgressTimer?.invalidate()
         
@@ -99,7 +136,7 @@ class DogQuizViewModel: ObservableObject {
     }
 }
 
-
+// MARK: - ContentView
 struct ContentView: View {
     @StateObject private var viewModel = DogQuizViewModel()
     
