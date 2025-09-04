@@ -12,6 +12,7 @@ class DogQuizViewModel: ObservableObject {
     @Published var options: [String] = []
     @Published var correctAnswer: String = ""
     @Published var feedback: String?
+    private var allBreeds: [String] = []
     
     func loadNewQuestion() {
         DogAPI.fetchRandomDogImage { [weak self] result in
@@ -31,7 +32,35 @@ class DogQuizViewModel: ObservableObject {
         guard let breed = extractBreed(from: imageURL) else { return }
         correctAnswer = breed.capitalized
         
-        // Dummy wrong answers for now (you can improve later by pulling breed list)
+        // If we don't have breeds yet, fetch them
+        if allBreeds.isEmpty {
+            DogAPI.fetchAllBreeds { [weak self] result in
+                DispatchQueue.main.async {
+                    switch result {
+                    case .success(let breeds):
+                        self?.allBreeds = breeds
+                        self?.setupOptions()
+                    case .failure:
+                        // Fallback to dummy answers if fetch fails
+                        self?.setupDummyOptions()
+                    }
+                }
+            }
+        } else {
+            setupOptions()
+        }
+    }
+    
+    private func setupOptions() {
+        // Filter out the correct answer from available breeds
+        let availableBreeds = allBreeds.filter { $0 != correctAnswer }
+        // Get 3 random wrong answers
+        let wrongAnswers = Array(availableBreeds.shuffled().prefix(3))
+        options = ([correctAnswer] + wrongAnswers).shuffled()
+    }
+    
+    private func setupDummyOptions() {
+        // Fallback dummy wrong answers
         let wrongAnswers = ["Beagle", "Poodle", "Labrador"].shuffled()
         options = ([correctAnswer] + wrongAnswers).shuffled()
     }
