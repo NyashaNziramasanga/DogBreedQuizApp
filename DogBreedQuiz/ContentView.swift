@@ -12,7 +12,9 @@ class DogQuizViewModel: ObservableObject {
     @Published var options: [String] = []
     @Published var correctAnswer: String = ""
     @Published var feedback: String?
+    @Published var answeredOption: String?
     private var allBreeds: [String] = []
+    private var autoProgressTimer: Timer?
     
     func loadNewQuestion() {
         DogAPI.fetchRandomDogImage { [weak self] result in
@@ -74,7 +76,20 @@ class DogQuizViewModel: ObservableObject {
     }
     
     func checkAnswer(_ answer: String) {
+        answeredOption = answer
         feedback = (answer == correctAnswer) ? "✅ Correct!" : "❌ Wrong! It's \(correctAnswer)."
+        
+        // Cancel any existing timer
+        autoProgressTimer?.invalidate()
+        
+        // Set up new timer for auto-progression
+        autoProgressTimer = Timer.scheduledTimer(withTimeInterval: 2.0, repeats: false) { [weak self] _ in
+            DispatchQueue.main.async {
+                self?.loadNewQuestion()
+                self?.answeredOption = nil
+                self?.feedback = nil
+            }
+        }
     }
 }
 
@@ -103,28 +118,22 @@ struct ContentView: View {
                          .multilineTextAlignment(.center)
                          .padding(.horizontal)
             
-                         // ANSWER OPTIONS
+            // ANSWER OPTIONS
               LazyVGrid(columns: [
                   GridItem(.flexible(), spacing: 8),
                   GridItem(.flexible(), spacing: 8)
               ], spacing: 8) {
                   ForEach(viewModel.options, id: \.self) { option in
-                      AnswerButton(option: option, action: { viewModel.checkAnswer(option) })
+                      AnswerButton(
+                          option: option,
+                          action: { viewModel.checkAnswer(option) },
+                          isCorrect: viewModel.answeredOption == option ? (option == viewModel.correctAnswer) : nil
+                      )
                   }
               }
               .padding(8)
+              .animation(.spring(response: 0.3), value: viewModel.answeredOption)
             
-            if let feedback = viewModel.feedback {
-                Text(feedback)
-                    .font(.subheadline)
-                    .foregroundColor(.secondary)
-                    .padding()
-                
-                Button("Next Dog") {
-                    viewModel.loadNewQuestion()
-                }
-                .padding()
-            }
         }
         .onAppear {
             viewModel.loadNewQuestion()
@@ -138,18 +147,36 @@ struct ContentView: View {
 struct AnswerButton: View {
     let option: String
     let action: () -> Void
+    let isCorrect: Bool?
     
     var body: some View {
         GeometryReader { geometry in
             Button(action: action) {
-                Text(option)
-                    .font(.headline)
-                    .frame(width: geometry.size.width, height: geometry.size.width)
-                    .background(Color.blue.opacity(0.2))
-                    .cornerRadius(10)
+                ZStack(alignment: .topTrailing) {
+                    Text(option)
+                        .font(.headline)
+                        .frame(width: geometry.size.width, height: geometry.size.width)
+                        .background(backgroundColor)
+                        .cornerRadius(10)
+                    
+                    if let isCorrect = isCorrect {
+                        Text(isCorrect ? "✅" : "❌")
+                            .font(.title2)
+                            .padding(8)
+                            .transition(.scale.combined(with: .opacity))
+                    }
+                }
             }
+            .disabled(isCorrect != nil)
         }
-        .aspectRatio(1, contentMode: .fit) 
+        .aspectRatio(1, contentMode: .fit)
+    }
+    
+    private var backgroundColor: Color {
+        guard let isCorrect = isCorrect else {
+            return Color.blue.opacity(0.2)
+        }
+        return isCorrect ? Color.green.opacity(0.3) : Color.red.opacity(0.3)
     }
 }
 
