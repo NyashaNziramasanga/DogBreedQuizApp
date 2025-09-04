@@ -15,6 +15,8 @@ class DogQuizViewModel: ObservableObject {
     @Published var correctAnswer: String = ""
     @Published var feedback: String?
     @Published var answeredOption: String?
+    @Published var score: Int = 0
+    @Published var totalQuestions: Int = 0
     private var allBreeds: [String] = []
     private var autoProgressTimer: Timer?
     private let feedbackGenerator = UINotificationFeedbackGenerator()
@@ -109,6 +111,10 @@ class DogQuizViewModel: ObservableObject {
     func checkAnswer(_ answer: String) {
         answeredOption = answer
         let isCorrect = answer == correctAnswer
+        totalQuestions += 1
+        if isCorrect {
+            score += 1
+        }
         feedback = isCorrect ? "✅ Correct!" : "❌ Wrong! It's \(correctAnswer)."
         
         // Provide haptic feedback
@@ -141,8 +147,21 @@ struct ContentView: View {
     @StateObject private var viewModel = DogQuizViewModel()
     
     var body: some View {
-        // DOG IMAGE
         VStack (spacing:16){
+            // Score Display
+            HStack {
+                HStack(spacing: 4) {
+                    Image(systemName: "star.fill")
+                        .foregroundColor(.yellow)
+                    Text("\(viewModel.score)/\(viewModel.totalQuestions)")
+                        .font(.headline)
+                }
+                .padding(8)
+                .background(Color.blue.opacity(0.1))
+                .cornerRadius(8)
+            }
+                
+                Spacer()
             if let url = URL(string: viewModel.dogImageURL) {
                 AsyncImage(url: url) { image in
                     image.resizable()
