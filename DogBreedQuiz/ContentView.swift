@@ -341,13 +341,13 @@ struct ContentView: View {
     
     private var gameView: some View {
         VStack (spacing:16){
-            // Score Display
+            // SCORE & TIMER
             HStack {
-                // Score
+                // SCORE
                 HStack(spacing: 4) {
                     Image(systemName: "star.fill")
                         .foregroundColor(.yellow)
-                    Text("\(viewModel.score)/\(viewModel.totalQuestions)")
+                    Text("\(viewModel.score)/\(viewModel.selectedNumberOfQuestions)")
                         .font(.headline)
                 }
                 .padding(8)
@@ -356,7 +356,7 @@ struct ContentView: View {
                 
                 Spacer()
                 
-                // Timer
+                // TIMER
                 HStack(spacing: 4) {
                     Image(systemName: "clock.fill")
                         .foregroundColor(viewModel.timeRemaining <= 3 ? .red : .blue)
