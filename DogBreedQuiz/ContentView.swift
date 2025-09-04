@@ -97,10 +97,12 @@ struct ContentView: View {
             
             Spacer()
             
-            Text("What breed is this?")
-                .font(.headline)
-                .padding()
-            
+// QUESTION
+            Text("What breed is this ?")
+                         .font(.title2)
+                         .fontWeight(.bold)
+                         .multilineTextAlignment(.center)
+                         .padding(.horizontal)
             ForEach(viewModel.options, id: \.self) { option in
                 Button(action: { viewModel.checkAnswer(option) }) {
                     Text(option)
