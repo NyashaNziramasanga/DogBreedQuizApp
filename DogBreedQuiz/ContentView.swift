@@ -83,6 +83,7 @@ class DogQuizViewModel: ObservableObject {
         isTimeUp = true
         wrongSound?.play()
         totalQuestions += 1
+        remainingQuestions -= 1
         
         // Check if this was the last question
         if remainingQuestions == 0 {
@@ -118,7 +119,6 @@ class DogQuizViewModel: ObservableObject {
             return
         }
         
-        remainingQuestions -= 1
         DogAPI.fetchRandomDogImage { [weak self] result in
             DispatchQueue.main.async {
                 switch result {
@@ -182,6 +182,7 @@ class DogQuizViewModel: ObservableObject {
         answeredOption = answer
         let isCorrect = answer == correctAnswer
         totalQuestions += 1
+        remainingQuestions -= 1
         if isCorrect {
             score += 1
         }
