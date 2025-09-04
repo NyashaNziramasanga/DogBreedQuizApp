@@ -104,16 +104,9 @@ struct ContentView: View {
                          .padding(.horizontal)
             
             // ANSWER OPTIONS
-            ForEach(viewModel.options, id: \.self) { option in
-                Button(action: { viewModel.checkAnswer(option) }) {
-                    Text(option)
-                        .padding()
-                        .frame(maxWidth: .infinity)
-                        .background(Color.blue.opacity(0.2))
-                        .cornerRadius(10)
-                }
-                .padding(.horizontal)
-            }
+              ForEach(viewModel.options, id: \.self) { option in
+                  AnswerButton(option: option, action: { viewModel.checkAnswer(option) })
+              }
             
             if let feedback = viewModel.feedback {
                 Text(feedback)
@@ -134,6 +127,23 @@ struct ContentView: View {
     }
 }
 
+
+// MARK: - Answer Button
+struct AnswerButton: View {
+    let option: String
+    let action: () -> Void
+    
+    var body: some View {
+        Button(action: action) {
+            Text(option)
+                .padding()
+                .frame(maxWidth: .infinity)
+                .background(Color.blue.opacity(0.2))
+                .cornerRadius(10)
+        }
+        .padding(.horizontal)
+    }
+}
 
 #Preview {
     ContentView()
