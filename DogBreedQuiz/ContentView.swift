@@ -83,7 +83,7 @@ struct ContentView: View {
     @StateObject private var viewModel = DogQuizViewModel()
     
     var body: some View {
-        VStack {
+        VStack (spacing:16){
             if let url = URL(string: viewModel.dogImageURL) {
                 AsyncImage(url: url) { image in
                     image.resizable()
@@ -94,8 +94,6 @@ struct ContentView: View {
                     ProgressView()
                 }
             }
-            
-            Spacer()
             
 // QUESTION
             Text("What breed is this ?")
