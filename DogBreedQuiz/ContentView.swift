@@ -26,9 +26,10 @@ class DogQuizViewModel: ObservableObject {
     private var questionTimer: Timer?
     private let feedbackGenerator = UINotificationFeedbackGenerator()
     
-    // Audio players for feedback sounds
+    // Audio players for sounds
     private var correctSound: AVAudioPlayer?
     private var wrongSound: AVAudioPlayer?
+    private var backgroundMusic: AVAudioPlayer?
     
     init() {
         setupSounds()
@@ -40,10 +41,16 @@ class DogQuizViewModel: ObservableObject {
         score = 0
         totalQuestions = 0
         isGameStarted = true
+        
+        // Start background music
+        backgroundMusic?.currentTime = 0 // Start from beginning
+        backgroundMusic?.play()
+        
         loadNewQuestion()
     }
     
     private func setupSounds() {
+        // Setup correct sound
         if let correctPath = Bundle.main.path(forResource: "correct", ofType: "mp3") {
             do {
                 correctSound = try AVAudioPlayer(contentsOf: URL(fileURLWithPath: correctPath))
@@ -53,12 +60,25 @@ class DogQuizViewModel: ObservableObject {
             }
         }
         
+        // Setup wrong sound
         if let wrongPath = Bundle.main.path(forResource: "wrong", ofType: "mp3") {
             do {
                 wrongSound = try AVAudioPlayer(contentsOf: URL(fileURLWithPath: wrongPath))
                 wrongSound?.prepareToPlay()
             } catch {
                 print("Error loading wrong sound: \(error)")
+            }
+        }
+        
+        // Setup background music
+        if let backgroundPath = Bundle.main.path(forResource: "background", ofType: "mp3") {
+            do {
+                backgroundMusic = try AVAudioPlayer(contentsOf: URL(fileURLWithPath: backgroundPath))
+                backgroundMusic?.numberOfLoops = -1 // Loop indefinitely
+                backgroundMusic?.volume = 0.5 // Set to 50% volume
+                backgroundMusic?.prepareToPlay()
+            } catch {
+                print("Error loading background music: \(error)")
             }
         }
     }
@@ -105,6 +125,27 @@ class DogQuizViewModel: ObservableObject {
         // Stop all timers
         questionTimer?.invalidate()
         autoProgressTimer?.invalidate()
+        
+        // Stop background music with fade out
+        if let player = backgroundMusic {
+            let originalVolume = player.volume
+            let fadeOutDuration: TimeInterval = 1.0
+            let fadeSteps = 50
+            let stepDuration = fadeOutDuration / TimeInterval(fadeSteps)
+            let volumeDecrement = originalVolume / Float(fadeSteps)
+            
+            for step in 0..<fadeSteps {
+                DispatchQueue.main.asyncAfter(deadline: .now() + stepDuration * Double(step)) {
+                    player.volume = originalVolume - (volumeDecrement * Float(step))
+                }
+            }
+            
+            // Stop playback and reset volume after fade
+            DispatchQueue.main.asyncAfter(deadline: .now() + fadeOutDuration) {
+                player.stop()
+                player.volume = originalVolume
+            }
+        }
         
         // Reset states
         timeRemaining = 0
