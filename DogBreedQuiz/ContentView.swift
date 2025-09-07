@@ -21,6 +21,7 @@ class DogQuizViewModel: ObservableObject {
     @Published var isGameStarted: Bool = false
     @Published var selectedNumberOfQuestions: Int = 10
     @Published var remainingQuestions: Int = 10  // Initialize with default value
+    @Published var isMusicEnabled: Bool = true
     private var allBreeds: [String] = []
     private var autoProgressTimer: Timer?
     private var questionTimer: Timer?
@@ -42,9 +43,11 @@ class DogQuizViewModel: ObservableObject {
         totalQuestions = 0
         isGameStarted = true
         
-        // Start background music
-        backgroundMusic?.currentTime = 0 // Start from beginning
-        backgroundMusic?.play()
+        // Start background music if enabled
+        backgroundMusic?.currentTime = 0
+        if isMusicEnabled {
+            backgroundMusic?.play()
+        }
         
         loadNewQuestion()
     }
@@ -118,6 +121,15 @@ class DogQuizViewModel: ObservableObject {
                 self?.answeredOption = nil
                 self?.isTimeUp = false
             }
+        }
+    }
+    
+    func toggleMusic() {
+        isMusicEnabled.toggle()
+        if isMusicEnabled && isGameStarted {
+            backgroundMusic?.play()
+        } else {
+            backgroundMusic?.stop()
         }
     }
     
@@ -410,8 +422,20 @@ struct ContentView: View {
     
     private var gameView: some View {
         VStack (spacing:16){
-            // SCORE & TIMER
+            // TOP BAR: MUSIC, SCORE & TIMER
             HStack {
+                // MUSIC TOGGLE
+                Button(action: { viewModel.toggleMusic() }) {
+                    Image(systemName: viewModel.isMusicEnabled ? "speaker.wave.2.fill" : "speaker.slash.fill")
+                        .foregroundColor(viewModel.isMusicEnabled ? .blue : .gray)
+                        .font(.system(size: 20))
+                }
+                .padding(8)
+                .background(Color.blue.opacity(0.1))
+                .cornerRadius(8)
+                
+                Spacer()
+                
                 // SCORE
                 HStack(spacing: 4) {
                     Image(systemName: "star.fill")
