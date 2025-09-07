@@ -1,5 +1,7 @@
 # 🐕 Dog Breed Quiz App
 
+![Demo Video](Media/demo.mp4)
+
 An interactive iOS quiz game inspired by [kahoot](https://kahoot.com/) that tests your knowledge of dog breeds. The app fetches random dog images and challenges players to identify the correct breed from multiple choices.
 
 ## ✨ Features
