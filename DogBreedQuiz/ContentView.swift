@@ -386,11 +386,17 @@ struct ContentView: View {
         ZStack {
             if viewModel.isGameStarted {
                 gameView
+                    .safeAreaInset(edge: .top) {
+                        Color.clear.frame(height: 0)
+                    }
+                    .safeAreaInset(edge: .bottom) {
+                        Color.clear.frame(height: 0)
+                    }
             }
             
             if showStartDialog {
                 Color.black.opacity(0.3)
-                    .edgesIgnoringSafeArea(.all)
+                    .ignoresSafeArea()
                 
                 StartDialog(isPresented: $showStartDialog) { numberOfQuestions in
                     viewModel.startGame(with: numberOfQuestions)
@@ -400,7 +406,7 @@ struct ContentView: View {
             
             if showScoreDialog {
                 Color.black.opacity(0.3)
-                    .edgesIgnoringSafeArea(.all)
+                    .ignoresSafeArea()
                 
                 ScoreDialog(
                     score: viewModel.score,
@@ -442,7 +448,26 @@ struct ContentView: View {
     }
     
     private var gameView: some View {
-        VStack (spacing:16){
+        VStack (spacing:8) {
+            Spacer().frame(height: 8)
+            
+            // PROGRESS BAR
+            GeometryReader { geometry in
+                ZStack(alignment: .leading) {
+                    Rectangle()
+                        .foregroundColor(Color.gray.opacity(0.3))
+                        .frame(height: 8)
+                        .cornerRadius(4)
+                    
+                    Rectangle()
+                        .foregroundColor(.blue)
+                        .frame(width: geometry.size.width * CGFloat(viewModel.totalQuestions) / CGFloat(viewModel.selectedNumberOfQuestions), height: 8)
+                        .cornerRadius(4)
+                        .animation(.spring(response: 0.3), value: viewModel.totalQuestions)
+                }
+            }
+            .frame(height: 8)            
+            
             // TOP BAR: MUSIC, SCORE & TIMER
             HStack {
                 // MUSIC TOGGLE
