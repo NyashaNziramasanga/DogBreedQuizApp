@@ -41,6 +41,8 @@ class DogQuizViewModel: ObservableObject {
         remainingQuestions = numberOfQuestions
         score = 0
         totalQuestions = 0
+        answeredOption = nil
+        isTimeUp = false
         isGameStarted = true
         
         // Start background music if enabled
