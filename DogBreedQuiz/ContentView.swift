@@ -420,6 +420,25 @@ struct ContentView: View {
         }
     }
     
+    private func shouldShowAnswer(option: String, viewModel: DogQuizViewModel) -> Bool {
+        // Show all answers when timer runs out
+        if viewModel.isTimeUp {
+            return true
+        }
+        
+        // If an answer was selected
+        if let selectedAnswer = viewModel.answeredOption {
+            // If selected answer is wrong, show all answers
+            if selectedAnswer != viewModel.correctAnswer {
+                return true
+            }
+            // If selected answer is correct, only show the selected answer
+            return selectedAnswer == option
+        }
+        
+        return false
+    }
+    
     private var gameView: some View {
         VStack (spacing:16){
             // TOP BAR: MUSIC, SCORE & TIMER
@@ -490,7 +509,7 @@ struct ContentView: View {
                       AnswerButton(
                           option: option,
                           action: { viewModel.checkAnswer(option) },
-                          isCorrect: (viewModel.answeredOption == option || viewModel.isTimeUp) ? (option == viewModel.correctAnswer) : nil
+                          isCorrect: shouldShowAnswer(option: option, viewModel: viewModel) ? (option == viewModel.correctAnswer) : nil
                       )
                   }
               }
